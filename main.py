@@ -36,6 +36,9 @@ from sklearn.ensemble import RandomForestClassifier
 from sklearn.ensemble import RandomForestRegressor
 from sklearn.neighbors import KNeighborsClassifier
 from sklearn.neighbors import KNeighborsRegressor
+from sklearn.svm import LinearSVC
+from sklearn.svm import LinearSVR
+
 from sklearn.metrics import accuracy_score, precision_score, recall_score, \
     f1_score, roc_auc_score, mean_squared_error, mean_absolute_error
 
@@ -618,44 +621,59 @@ class DataML(Screen):
                         model = DecisionTreeClassifier()
                         model.fit(X_train, y_train)
                         y_pred = model.predict(X_test)
-                        tk.messagebox.showinfo(title="%s" % chosen_model, message='precision: {}'.format(precision_score(y_test, y_pred)))
+                        tk.messagebox.showinfo(title="%s" % chosen_model,
+                                               message='precision: {}'.format(precision_score(y_test, y_pred)))
                     else:
                         model = DecisionTreeRegressor()
                         model.fit(X_train, y_train)
                         y_pred = model.predict(X_test)
-                        tk.messagebox.showinfo(title="%s" % chosen_model, message='MSE: {}'.format(mean_squared_error(y_test, y_pred)))
+                        tk.messagebox.showinfo(title="%s" % chosen_model,
+                                               message='MSE: {}'.format(mean_squared_error(y_test, y_pred)))
 
                 elif chosen_model == 'Логистическая регрессия':
                     model = LogisticRegression()
                     model.fit(X_train, y_train)
                     y_pred = model.predict(X_test)
-                    tk.messagebox.showinfo(title="%s" % chosen_model, message='precision: {}'.format(precision_score(y_test, y_pred)))
+                    tk.messagebox.showinfo(title="%s" % chosen_model,
+                                           message='precision: {}'.format(precision_score(y_test, y_pred)))
 
 
                 elif chosen_model == 'Линейная регрессия':
                     model = LinearRegression()
                     model.fit(X_train, y_train)
                     y_pred = model.predict(X_test)
-                    tk.messagebox.showinfo(title="%s" % chosen_model, message='MSE: {}'.format(mean_squared_error(y_test, y_pred)))
+                    tk.messagebox.showinfo(title="%s" % chosen_model,
+                                           message='MSE: {}'.format(mean_squared_error(y_test, y_pred)))
 
                 elif chosen_model == 'Опорные вектора':
                     if chosen_task == 'Классификация':
-                        pass
+                        model = LinearSVC()
+                        model.fit(X_train, y_train)
+                        y_pred = model.predict(X_test)
+                        tk.messagebox.showinfo(title="%s" % chosen_model,
+                                               message='precision: {}'.format(precision_score(y_test, y_pred)))
+
                     else:
-                        pass
+                        model = LinearSVR()
+                        model.fit(X_train, y_train)
+                        y_pred = model.predict(X_test)
+                        tk.messagebox.showinfo(title="%s" % chosen_model,
+                                               message='MSE: {}'.format(mean_squared_error(y_test, y_pred)))
 
                 elif chosen_model == 'Случайный лес':
                     if chosen_task == 'Классификация':
                         model = RandomForestClassifier()
                         model.fit(X_train, y_train)
                         y_pred = model.predict(X_test)
-                        tk.messagebox.showinfo(title="%s" % chosen_model, message='precision: {}'.format(precision_score(y_test, y_pred)))
+                        tk.messagebox.showinfo(title="%s" % chosen_model,
+                                               message='precision: {}'.format(precision_score(y_test, y_pred)))
 
                     else:
                         model = RandomForestRegressor()
                         model.fit(X_train, y_train)
                         y_pred = model.predict(X_test)
-                        tk.messagebox.showinfo(title="%s" % chosen_model, message='MSE: {}'.format(mean_squared_error(y_test, y_pred)))
+                        tk.messagebox.showinfo(title="%s" % chosen_model,
+                                               message='MSE: {}'.format(mean_squared_error(y_test, y_pred)))
 
 
                 elif chosen_model == 'Ближайшие соседи':
