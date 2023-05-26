@@ -43,6 +43,10 @@ from sklearn.metrics import accuracy_score, precision_score, recall_score, \
     f1_score, roc_auc_score, mean_squared_error, mean_absolute_error
 
 from sklearn.model_selection import train_test_split
+from sklearn.model_selection import GridSearchCV
+
+# Other
+import webbrowser
 
 filepath = ''
 chosen_model = None
@@ -102,6 +106,13 @@ class DataLoader(Screen):
             pos=(20, 300)
         )
 
+        """button_to_github = Button(
+            pos=(20, 700),
+            background_normal="C:/Users/Mr0Wo/PycharmProjects/pythonProject/icons/github.png",
+            size_hint=[.1, .1],
+            on_press=self.to_github
+        )"""
+
         boxlayout.add_widget(button_data_loader)
         boxlayout.add_widget(button_data_analysis)
         boxlayout.add_widget(button_data_visualizer)
@@ -109,6 +120,7 @@ class DataLoader(Screen):
         floatlayout.add_widget(boxlayout)
         floatlayout.add_widget(button_file_path)
         floatlayout.add_widget(button_upload_data)
+        # floatlayout.add_widget(button_to_github)
         self.add_widget(floatlayout)
 
     def to_dataloader(self, *args):
@@ -170,6 +182,10 @@ class DataLoader(Screen):
             """
         else:
             pass
+
+    # def to_github(self, *args):
+    #     webbrowser.open("https://github.com/Mr0Wolfy")
+
 
 class DataAnalysis(Screen):
     def __init__(self, **kwargs):
@@ -476,8 +492,7 @@ class DataML(Screen):
             'Логистическая регрессия',
             'Опорные вектора',
             'Ближайшие соседи',
-            'Случайный лес',
-            'Градиентный бустинг'
+            'Случайный лес'
                   ]
         for model in models:
             # Adding button in drop down list
@@ -614,7 +629,7 @@ class DataML(Screen):
             X = df.drop(columns=label, axis=1)
             y = df[label]
             X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=.3, random_state=42)
-            if flag_basic_params == 1:
+            if 'flag_basic_params' in globals():
 
                 if chosen_model == 'Решающие деревья':
                     if chosen_task == 'Классификация':
@@ -692,6 +707,27 @@ class DataML(Screen):
                                                message='MSE: {}'.format(mean_squared_error(y_test, y_pred)))
 
 
+            elif 'flag_optimal_parameters' in globals():
+                if chosen_model == 'Решающие деревья':
+                    if chosen_task == 'Классификация':
+                        params = {'max_depth':range(4, 26, 2),
+                                  'min_samples_split':range(1, 10),
+                                  'min_samples_leaf': range(1, 10)}
+                        clf = DecisionTreeClassifier()
+                        grid = GridSearchCV(clf, param_grid=params, cv=5)
+                        grid.fit(X_train, y_train)
+                        model = grid.best_estimator_
+                        model.fit(X_train, y_train)
+                        y_pred = model.predict(X_test)
+                        tk.messagebox.showinfo(title="%s" % chosen_model,
+                                               message='precision: {}'.format(precision_score(y_test, y_pred)))
+                    else:
+                        pass
+
+                elif chosen_model == 'Линейная регрессия':
+                    pass
+
+
     def model_params(self, *args):
 
 
@@ -720,12 +756,16 @@ class DataML(Screen):
             global flag_basic_params
             flag_basic_params = 1
             tk.messagebox.showinfo(title="Устанока параметров модели", message='Параметры установлены!')
+            if 'flag_optimal_parameters' in globals():
+                del flag_optimal_parameters
             root.destroy()
 
         def set_optimal_parameters(*args):
             global flag_optimal_parameters
             flag_optimal_parameters = 1
             tk.messagebox.showinfo(title="Устанока параметров модели", message='Параметры будут подобраны автоматически!')
+            if 'flag_basic_params' in globals():
+                del flag_basic_params
             root.destroy()
 
 
@@ -754,7 +794,7 @@ class DataML(Screen):
                 button_basic_param.pack()
                 button_basic_param.place(x=20, y=250)
 
-                button_auto_param = tk.Button(root, text="Автоподбор параметров")
+                button_auto_param = tk.Button(root, text="Автоподбор параметров", command=set_optimal_parameters)
                 button_auto_param.pack()
                 button_auto_param.place(x=20, y=300)
 
