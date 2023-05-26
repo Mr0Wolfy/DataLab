@@ -22,7 +22,6 @@ from kivy.garden.matplotlib import FigureCanvasKivyAgg
 import tkinter as tk
 from tkinter import Tk
 from tkinter import ttk
-from tkinter import BooleanVar
 from tkinter import StringVar
 from tkinter import Radiobutton
 from tkinter import filedialog
@@ -57,10 +56,8 @@ class DataLoader(Screen):
     def __init__(self, **kwargs):
         super().__init__(**kwargs)
 
-
         boxlayout = BoxLayout(orientation="horizontal", spacing=5, padding=[10])
         floatlayout = FloatLayout()
-
 
         button_data_loader = Button(
             text="DataLoader",
@@ -618,7 +615,9 @@ class DataML(Screen):
                                    message='Не выбрана целевая переменная')
             pass
 
-        elif 'flag_basic_params' not in globals() and 'flag_optimal_parameters' not in globals():
+        elif 'flag_basic_params' not in globals() and \
+                'flag_optimal_params' not in globals() and \
+                'flag_user_params' not in globals():
             tk.messagebox.showinfo(title="Ошибка!",
                                    message='Не заданы параметы модели')
             pass
@@ -707,6 +706,17 @@ class DataML(Screen):
                                                message='MSE: {}'.format(mean_squared_error(y_test, y_pred)))
 
 
+            elif 'flag_user_params' in globals():
+                if chosen_model == 'Решающие деревья':
+                    if chosen_task == 'Классификация':
+                        model = DecisionTreeClassifier(criterion=tree_params['criterion'],
+                                                       max_depth=tree_params['max_depth'],
+                                                       min_samples_split=tree_params['min_samples_split'])
+                        model.fit(X_train, y_train)
+                        y_pred = model.predict(X_test)
+                        tk.messagebox.showinfo(title="%s" % chosen_model,
+                                               message='precision: {}'.format(precision_score(y_test, y_pred)))
+
             elif 'flag_optimal_parameters' in globals():
                 if chosen_model == 'Решающие деревья':
                     if chosen_task == 'Классификация':
@@ -731,22 +741,31 @@ class DataML(Screen):
     def model_params(self, *args):
 
 
-        def save_param_tree(*args):
+        def save_user_params(*args):
+            global flag_user_params
+            flag_user_params = 1
             if chosen_model == 'Решающие деревья':
-                global tree_dict
-                tree_dict = {}
+                global tree_params
+                tree_params = {}
                 if chosen_task == 'Классификация':
-                    tree_dict['criterion'] = tree_class_var.get()
+                    tree_params['criterion'] = tree_class_var.get()
                 else:
-                    tree_dict['criterion'] = tree_reg_var.get()
-                tree_dict['max_depth'] = text_input_max_depth.get()
-                tree_dict['min_samples_split'] = text_input_min_samples_split.get()
+                    tree_params['criterion'] = tree_reg_var.get()
+                tree_params['max_depth'] = text_input_max_depth.get()
+                tree_params['min_samples_split'] = text_input_min_samples_split.get()
                 tk.messagebox.showinfo(title="Устанока параметров модели", message='Параметры установлены!')
 
+                for key, value in zip(tree_params.keys(), tree_params.values()):
+                    if value == "":
+                        tree_params[key] = None
+                    elif value.isdigit():
+                        tree_params[key] = int(value)
+
+
             elif chosen_model == 'Логистическая регрессия':
-                global log_reg_dict
-                log_reg_dict = {}
-                log_reg_dict['penalty'] = log_reg_var.get()
+                global log_reg_params
+                log_reg_params = {}
+                log_reg_params['penalty'] = log_reg_var.get()
 
             root.destroy()
 
@@ -760,7 +779,7 @@ class DataML(Screen):
                 del flag_optimal_parameters
             root.destroy()
 
-        def set_optimal_parameters(*args):
+        def set_optimal_params(*args):
             global flag_optimal_parameters
             flag_optimal_parameters = 1
             tk.messagebox.showinfo(title="Устанока параметров модели", message='Параметры будут подобраны автоматически!')
@@ -786,7 +805,7 @@ class DataML(Screen):
                 root.title(chosen_model)
                 root.geometry("800x350")
 
-                button_save_param = tk.Button(root, text="Сохранить параметры", command=save_param_tree)
+                button_save_param = tk.Button(root, text="Сохранить параметры", command=save_user_params)
                 button_save_param.pack()
                 button_save_param.place(x=20, y=200)
 
@@ -794,7 +813,7 @@ class DataML(Screen):
                 button_basic_param.pack()
                 button_basic_param.place(x=20, y=250)
 
-                button_auto_param = tk.Button(root, text="Автоподбор параметров", command=set_optimal_parameters)
+                button_auto_param = tk.Button(root, text="Автоподбор параметров", command=set_optimal_params)
                 button_auto_param.pack()
                 button_auto_param.place(x=20, y=300)
 
