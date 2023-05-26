@@ -558,6 +558,14 @@ class DataML(Screen):
             on_press=self.ml_coach
         )
 
+        button_model_metrics = Button(
+            text='Метрики модели',
+            size_hint=[.23, .05],
+            background_color=[0, 1.5, 3, 1],
+            pos=(270, 500),
+            on_press=self.model_metrics
+        )
+
 
         change_boxlayout.add_widget(button_data_loader)
         change_boxlayout.add_widget(button_data_analysis)
@@ -570,6 +578,7 @@ class DataML(Screen):
         floatlayout.add_widget(button_model_train)
         floatlayout.add_widget(button_model_params)
         floatlayout.add_widget(button_drop_down_tasks)
+        floatlayout.add_widget(button_model_metrics)
 
         floatlayout.add_widget(change_boxlayout)
 
@@ -624,6 +633,9 @@ class DataML(Screen):
 
 
         else:
+            global y_test
+            global y_pred
+            global model
             label = user_label_input.text
             X = df.drop(columns=label, axis=1)
             y = df[label]
@@ -998,10 +1010,22 @@ class DataML(Screen):
             else:
                 tk.messagebox.showinfo(title="Ошибка!", message='Модель {} не может решать задачи типа {}'.format(chosen_model.lower(), chosen_task.lower()))
 
-
         else:
             tk.messagebox.showinfo(title="Ошибка!", message='Пожалуйста, выберите тип модели и задачи')
 
+
+    def model_metrics(self, *args):
+        if 'model' in globals():
+            if chosen_task == 'Классификация':
+                tk.messagebox.showinfo(title="Метрики качества модели {}".format(chosen_model),
+                                    message='Accuracy score: {}\n '
+                                            'Recall score: {}'.format(accuracy_score(y_test, y_pred), recall_score(y_test, y_pred)))
+            elif chosen_task == 'Регрессия':
+                tk.messagebox.showinfo(title="Метрики качества модели {}".format(chosen_model),
+                                       message='')
+        else:
+            tk.messagebox.showinfo(title="Ошибка!",
+                                   message='Модель еще не обучена')
 
 class DataLabApp(MDApp):
     def build(self):
