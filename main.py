@@ -721,10 +721,35 @@ class DataML(Screen):
 
 
 
-                    elif chosen_task == 'Регрессия':
+                    else:
                         model = DecisionTreeRegressor(criterion=tree_params['criterion'],
                                                        max_depth=tree_params['max_depth'],
                                                        min_samples_split=tree_params['min_samples_split'])
+                        model.fit(X_train, y_train)
+                        y_pred = model.predict(X_test)
+
+                    tk.messagebox.showinfo(title="%s" % chosen_model,
+                                           message='Моедль успешно обучена!')
+
+                elif chosen_model == 'Случайный лес':
+                    if chosen_task == 'Классификация':
+                        model = RandomForestClassifier(
+                            n_estimators=random_forest_params['n_estimators'],
+                            max_depth=random_forest_params['max_depth'],
+                            criterion=random_forest_params['criterion'],
+                            min_samples_split=random_forest_params['min_samples_split'],
+                            min_samples_leaf=random_forest_params['min_samples_leaf']
+                        )
+                        model.fit(X_train, y_train)
+                        y_pred = model.predict(X_test)
+                    else:
+                        model = RandomForestRegressor(
+                            n_estimators=random_forest_params['n_estimators'],
+                            max_depth=random_forest_params['max_depth'],
+                            criterion=random_forest_params['criterion'],
+                            min_samples_split=random_forest_params['min_samples_split'],
+                            min_samples_leaf=random_forest_params['min_samples_leaf']
+                        )
                         model.fit(X_train, y_train)
                         y_pred = model.predict(X_test)
 
@@ -788,11 +813,49 @@ class DataML(Screen):
                         tree_params[key] = int(value)
 
 
-            elif chosen_model == 'Логистическая регрессия':
-                global log_reg_params
-                log_reg_params = {}
-                log_reg_params['penalty'] = log_reg_var.get()
-                root.destroy()
+            elif chosen_model == 'Случайный лес':
+                global random_forest_params
+                random_forest_params = {}
+                if chosen_task == 'Классификация':
+                    random_forest_params['criterion'] = random_forest_class_var.get()
+                else:
+                    random_forest_params['criterion'] = random_forest_reg_var.get()
+                random_forest_params['max_depth'] = text_input_max_depth_r_forest.get()
+                random_forest_params['n_estimators'] = text_input_n_estimators_r_forest.get()
+                random_forest_params['min_samples_split'] = text_input_min_samples_split_r_forest.get()
+                random_forest_params['min_samples_leaf'] = text_input_min_samples_leaf_r_forest.get()
+
+                if (int(text_input_max_depth_r_forest.get()) > 0) and (int(text_input_min_samples_leaf_r_forest.get()) > 0) \
+                        and (int(text_input_min_samples_split_r_forest.get()) >= 2) and (int(text_input_n_estimators_r_forest.get()) >= 1):
+                    tk.messagebox.showinfo(title="Устанока параметров модели",
+                                           message='Параметры установлены!')
+                    root.destroy()
+
+                elif int(text_input_n_estimators_r_forest.get()) < 1:
+                    tk.messagebox.showinfo(title="Ошибка!",
+                                           message='Кол-во оценщиков должен находиться в полуинтервале [1; +inf)')
+
+                elif int(text_input_max_depth_r_forest.get()) <= 0:
+                    tk.messagebox.showinfo(title="Ошибка!",
+                                           message='Параметр максимальная глубина должен находиться в полуинтервале [1; +inf)')
+
+                elif int(text_input_min_samples_leaf_r_forest.get()) <= 0:
+                    tk.messagebox.showinfo(title="Ошибка!",
+                                           message='Параметр минимальное кол-во элементов в листе должен находиться в полуинтервале [1; +inf)')
+
+                elif int(text_input_min_samples_split_r_forest.get()) < 2:
+                    tk.messagebox.showinfo(title="Ошибка!",
+                                           message='Параметр минимальное кол-во элементов для разбиения должен находиться в полуинтервале [2; +inf)')
+
+
+
+                for key, value in zip(random_forest_params.keys(), random_forest_params.values()):
+                    if value == "":
+                        random_forest_params[key] = None
+                    elif value.isdigit():
+                        random_forest_params[key] = int(value)
+
+
 
 
 
@@ -974,41 +1037,41 @@ class DataML(Screen):
 
                 elif chosen_model == 'Случайный лес':
 
-                    label_criterion = tk.Label(text='Выберите критейрий: ')
-                    label_criterion.pack()
-                    label_criterion.place(x=20, y=20)
+                    label_criterion_r_forest = tk.Label(text='Выберите критейрий: ')
+                    label_criterion_r_forest.pack()
+                    label_criterion_r_forest.place(x=20, y=20)
 
-                    label_n_estimators = tk.Label(text='Количество деревьев: ')
-                    label_n_estimators.pack()
-                    label_n_estimators.place(x=20, y=50)
+                    label_n_estimators_r_forest = tk.Label(text='Количество деревьев: ')
+                    label_n_estimators_r_forest.pack()
+                    label_n_estimators_r_forest.place(x=20, y=50)
 
-                    text_input_n_estimators = ttk.Entry(width=10)
-                    text_input_n_estimators.pack()
-                    text_input_n_estimators.place(x=190, y=50)
+                    text_input_n_estimators_r_forest = ttk.Entry(width=10)
+                    text_input_n_estimators_r_forest.pack()
+                    text_input_n_estimators_r_forest.place(x=190, y=50)
 
-                    label_max_depth = tk.Label(text='Максимальная глубина деревьев: ')
-                    label_max_depth.pack()
-                    label_max_depth.place(x=20, y=80)
+                    label_max_depth_r_forest = tk.Label(text='Максимальная глубина деревьев: ')
+                    label_max_depth_r_forest.pack()
+                    label_max_depth_r_forest.place(x=20, y=80)
 
-                    text_input_max_depth = ttk.Entry()
-                    text_input_max_depth.pack()
-                    text_input_max_depth.place(x=270, y=80)
+                    text_input_max_depth_r_forest = ttk.Entry()
+                    text_input_max_depth_r_forest.pack()
+                    text_input_max_depth_r_forest.place(x=270, y=80)
 
-                    label_min_samples_leaf = tk.Label(text='Минимальное кол-во элементов в листе: ')
-                    label_min_samples_leaf.pack()
-                    label_min_samples_leaf.place(x=20, y=110)
+                    label_min_samples_leaf_r_forest = tk.Label(text='Минимальное кол-во элементов в листе: ')
+                    label_min_samples_leaf_r_forest.pack()
+                    label_min_samples_leaf_r_forest.place(x=20, y=110)
 
-                    text_input_min_samples_leaf = ttk.Entry()
-                    text_input_min_samples_leaf.pack()
-                    text_input_min_samples_leaf.place(x=315, y=110)
+                    text_input_min_samples_leaf_r_forest = ttk.Entry()
+                    text_input_min_samples_leaf_r_forest.pack()
+                    text_input_min_samples_leaf_r_forest.place(x=315, y=110)
 
-                    label_min_samples_split = tk.Label(text='Минимальное кол-во элементов для разделения: ')
-                    label_min_samples_split.pack()
-                    label_min_samples_split.place(x=20, y=140)
+                    label_min_samples_split_r_forest = tk.Label(text='Минимальное кол-во элементов для разделения: ')
+                    label_min_samples_split_r_forest.pack()
+                    label_min_samples_split_r_forest.place(x=20, y=140)
 
-                    text_input_min_samples_split = ttk.Entry()
-                    text_input_min_samples_split.pack()
-                    text_input_min_samples_split.place(x=375, y=140)
+                    text_input_min_samples_split_r_forest = ttk.Entry()
+                    text_input_min_samples_split_r_forest.pack()
+                    text_input_min_samples_split_r_forest.place(x=375, y=140)
 
                     if chosen_task == 'Классификация':
                         random_forest_class_var = StringVar()
