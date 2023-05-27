@@ -711,8 +711,18 @@ class DataML(Screen):
 
             elif 'flag_user_params' in globals():
                 if chosen_model == 'Решающие деревья':
+
                     if chosen_task == 'Классификация':
                         model = DecisionTreeClassifier(criterion=tree_params['criterion'],
+                                                       max_depth=tree_params['max_depth'],
+                                                       min_samples_split=tree_params['min_samples_split'])
+                        model.fit(X_train, y_train)
+                        y_pred = model.predict(X_test)
+
+
+
+                    elif chosen_task == 'Регрессия':
+                        model = DecisionTreeRegressor(criterion=tree_params['criterion'],
                                                        max_depth=tree_params['max_depth'],
                                                        min_samples_split=tree_params['min_samples_split'])
                         model.fit(X_train, y_train)
@@ -757,7 +767,19 @@ class DataML(Screen):
                     tree_params['criterion'] = tree_reg_var.get()
                 tree_params['max_depth'] = text_input_max_depth.get()
                 tree_params['min_samples_split'] = text_input_min_samples_split.get()
-                tk.messagebox.showinfo(title="Устанока параметров модели", message='Параметры установлены!')
+
+                if (int(text_input_min_samples_split.get()) >= 2) and (int(text_input_max_depth.get()) > 0):
+                    tk.messagebox.showinfo(title="Устанока параметров модели",
+                                           message='Параметры установлены!')
+                    root.destroy()
+
+                elif int(text_input_min_samples_split.get()) < 2:
+                    tk.messagebox.showinfo(title="Ошибка!",
+                                           message='Параметр min_samples_split должен находиться в полуинтервале [2; +inf)')
+
+                elif int(text_input_max_depth.get()) <= 0:
+                    tk.messagebox.showinfo(title="Ошибка!",
+                                           message='Параметр max_depth должен находиться в полуинтервале [1; +inf)')
 
                 for key, value in zip(tree_params.keys(), tree_params.values()):
                     if value == "":
@@ -770,8 +792,9 @@ class DataML(Screen):
                 global log_reg_params
                 log_reg_params = {}
                 log_reg_params['penalty'] = log_reg_var.get()
+                root.destroy()
 
-            root.destroy()
+
 
 
 
@@ -901,12 +924,46 @@ class DataML(Screen):
                     r3.place(x=270, y=20)
                     root.mainloop()
 
-                    root.mainloop()
+
 
                 elif chosen_model == 'Опорные вектора':
                     root.mainloop()
 
                 elif chosen_model == 'Ближайшие соседи':
+
+                    label_n_neighbors = tk.Label(text='Кол-во ближайших соседей: ')
+                    label_n_neighbors.pack()
+                    label_n_neighbors.place(x=20, y=20)
+
+                    text_input_n_neighbors = ttk.Entry()
+                    text_input_n_neighbors.pack()
+                    text_input_n_neighbors.place(x=230, y=20)
+
+                    label_algorithm_neighbors = tk.Label(text='Алгоритм: ')
+                    label_algorithm_neighbors.pack()
+                    label_algorithm_neighbors.place(x=20, y=60)
+
+                    n_neighbors_var = StringVar()
+                    n_neighbors_var.set('auto')
+                    r1 = Radiobutton(text='auto',
+                                     variable=n_neighbors_var, value='auto')
+                    r2 = Radiobutton(text='ball_tree',
+                                     variable=n_neighbors_var, value='ball_tree')
+                    r3 = Radiobutton(text='kd_tree',
+                                     variable=n_neighbors_var, value='kd_tree')
+                    r4 = Radiobutton(text='brute',
+                                     variable=n_neighbors_var, value='brute')
+
+                    r1.pack()
+                    r1.place(x=100, y=60)
+                    r2.pack()
+                    r2.place(x=155, y=60)
+                    r3.pack()
+                    r3.place(x=238, y=60)
+                    r4.pack()
+                    r4.place(x=315, y=60)
+                    root.mainloop()
+
                     if chosen_task == 'Классификация':
                         root.mainloop()
                     elif chosen_task == 'Регрессия':
@@ -1017,6 +1074,7 @@ class DataML(Screen):
                                             'Roc_auc score: %.2f' % (accuracy_score(y_test, y_pred), precision_score(y_test, y_pred),
                                                                     recall_score(y_test, y_pred), f1_score(y_test, y_pred),
                                                                     roc_auc_score(y_test, y_pred)))
+
             elif chosen_task == 'Регрессия':
                 tk.messagebox.showinfo(title="Метрики качества модели {}".format(chosen_model),
                                        message='Mean_squared_error: %.2f\n'
