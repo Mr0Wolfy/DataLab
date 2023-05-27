@@ -39,7 +39,8 @@ from sklearn.svm import LinearSVC
 from sklearn.svm import LinearSVR
 
 from sklearn.metrics import accuracy_score, precision_score, recall_score, \
-    f1_score, roc_auc_score, mean_squared_error, mean_absolute_error
+    f1_score, roc_auc_score, mean_squared_error, mean_absolute_error, \
+    mean_squared_log_error, explained_variance_score
 
 from sklearn.model_selection import train_test_split
 from sklearn.model_selection import GridSearchCV
@@ -442,7 +443,7 @@ class DataML(Screen):
         floatlayout = FloatLayout()
 
         label_choose = Label(
-            text='[color=ff0000]Вставьте название целевой переменной:[/color]',
+            text='[color=000000]Вставьте название целевой переменной:[/color]',
             size_hint=[.1, .1],
             pos=(150, 650),
             markup=True
@@ -647,59 +648,49 @@ class DataML(Screen):
                         model = DecisionTreeClassifier()
                         model.fit(X_train, y_train)
                         y_pred = model.predict(X_test)
-                        tk.messagebox.showinfo(title="%s" % chosen_model,
-                                               message='precision: {}'.format(precision_score(y_test, y_pred)))
+
                     else:
                         model = DecisionTreeRegressor()
                         model.fit(X_train, y_train)
                         y_pred = model.predict(X_test)
-                        tk.messagebox.showinfo(title="%s" % chosen_model,
-                                               message='MSE: {}'.format(mean_squared_error(y_test, y_pred)))
+
 
                 elif chosen_model == 'Логистическая регрессия':
                     model = LogisticRegression()
                     model.fit(X_train, y_train)
                     y_pred = model.predict(X_test)
-                    tk.messagebox.showinfo(title="%s" % chosen_model,
-                                           message='precision: {}'.format(precision_score(y_test, y_pred)))
+
 
 
                 elif chosen_model == 'Линейная регрессия':
                     model = LinearRegression()
                     model.fit(X_train, y_train)
                     y_pred = model.predict(X_test)
-                    tk.messagebox.showinfo(title="%s" % chosen_model,
-                                           message='MSE: {}'.format(mean_squared_error(y_test, y_pred)))
 
                 elif chosen_model == 'Опорные вектора':
                     if chosen_task == 'Классификация':
                         model = LinearSVC()
                         model.fit(X_train, y_train)
                         y_pred = model.predict(X_test)
-                        tk.messagebox.showinfo(title="%s" % chosen_model,
-                                               message='precision: {}'.format(precision_score(y_test, y_pred)))
+
 
                     else:
                         model = LinearSVR()
                         model.fit(X_train, y_train)
                         y_pred = model.predict(X_test)
-                        tk.messagebox.showinfo(title="%s" % chosen_model,
-                                               message='MSE: {}'.format(mean_squared_error(y_test, y_pred)))
+
 
                 elif chosen_model == 'Случайный лес':
                     if chosen_task == 'Классификация':
                         model = RandomForestClassifier()
                         model.fit(X_train, y_train)
                         y_pred = model.predict(X_test)
-                        tk.messagebox.showinfo(title="%s" % chosen_model,
-                                               message='precision: {}'.format(precision_score(y_test, y_pred)))
+
 
                     else:
                         model = RandomForestRegressor()
                         model.fit(X_train, y_train)
                         y_pred = model.predict(X_test)
-                        tk.messagebox.showinfo(title="%s" % chosen_model,
-                                               message='MSE: {}'.format(mean_squared_error(y_test, y_pred)))
 
 
                 elif chosen_model == 'Ближайшие соседи':
@@ -707,15 +698,15 @@ class DataML(Screen):
                         model = KNeighborsClassifier()
                         model.fit(X_train, y_train)
                         y_pred = model.predict(X_test)
-                        tk.messagebox.showinfo(title="%s" % chosen_model,
-                                               message='precision: {}'.format(precision_score(y_test, y_pred)))
+
 
                     elif chosen_task == 'Регрессия':
                         model = KNeighborsRegressor()
                         model.fit(X_train, y_train)
                         y_pred = model.predict(X_test)
-                        tk.messagebox.showinfo(title="%s" % chosen_model,
-                                               message='MSE: {}'.format(mean_squared_error(y_test, y_pred)))
+
+                tk.messagebox.showinfo(title="%s" % chosen_model,
+                                       message='Моедль успешно обучена!')
 
 
             elif 'flag_user_params' in globals():
@@ -726,8 +717,9 @@ class DataML(Screen):
                                                        min_samples_split=tree_params['min_samples_split'])
                         model.fit(X_train, y_train)
                         y_pred = model.predict(X_test)
-                        tk.messagebox.showinfo(title="%s" % chosen_model,
-                                               message='precision: {}'.format(precision_score(y_test, y_pred)))
+
+                    tk.messagebox.showinfo(title="%s" % chosen_model,
+                                           message='Моедль успешно обучена!')
 
             elif 'flag_optimal_parameters' in globals():
                 if chosen_model == 'Решающие деревья':
@@ -1018,11 +1010,21 @@ class DataML(Screen):
         if 'model' in globals():
             if chosen_task == 'Классификация':
                 tk.messagebox.showinfo(title="Метрики качества модели {}".format(chosen_model),
-                                    message='Accuracy score: {}\n '
-                                            'Recall score: {}'.format(accuracy_score(y_test, y_pred), recall_score(y_test, y_pred)))
+                                    message='Accuracy score: %.2f\n'
+                                            'Precision score: %.2f\n'
+                                            'Recall score: %.2f\n'
+                                            'f1 score: %.2f\n'
+                                            'Roc_auc score: %.2f' % (accuracy_score(y_test, y_pred), precision_score(y_test, y_pred),
+                                                                    recall_score(y_test, y_pred), f1_score(y_test, y_pred),
+                                                                    roc_auc_score(y_test, y_pred)))
             elif chosen_task == 'Регрессия':
                 tk.messagebox.showinfo(title="Метрики качества модели {}".format(chosen_model),
-                                       message='')
+                                       message='Mean_squared_error: %.2f\n'
+                                               'Mean_absolute_error: %.2f\n'
+                                               'Explained_variance_score: %.2f'
+                                       % (mean_squared_error(y_test, y_pred),
+                                          mean_absolute_error(y_test, y_pred),
+                                          explained_variance_score(y_test, y_pred)))
         else:
             tk.messagebox.showinfo(title="Ошибка!",
                                    message='Модель еще не обучена')
