@@ -18,6 +18,9 @@ from kivy.uix.dropdown import DropDown
 from kivy.lang import Builder
 from kivy.uix.button import Button
 from kivy.garden.matplotlib import FigureCanvasKivyAgg
+from kivy.core.window import Window
+from kivy.uix.widget import Widget
+from kivy.base import runTouchApp
 
 # Import tkinter widgets
 import tkinter as tk
@@ -53,29 +56,6 @@ import webbrowser
 filepath = ''
 chosen_model = None
 chosen_task = None
-
-class DataTableShow(Screen):
-    def __init__(self, **kwargs):
-        super().__init__(**kwargs)
-
-        columns = df.columns.values
-        values = df.values
-        global data_table
-        data_table = MDDataTable(
-            size_hint=(.7, .6),
-            use_pagination=True,
-            pos_hint={'center_x': .6, 'center_y': .5},
-            column_data=[
-                (col, dp(30))
-                for col in columns
-            ],
-            row_data=values
-        )
-
-        floatlayout = FloatLayout()
-        floatlayout.add_widget(data_table)
-        self.add_widget(floatlayout)
-
 
 
 class DataLoader(Screen):
@@ -116,7 +96,7 @@ class DataLoader(Screen):
         button_file_path = Button(
             text="Выбрать путь к файлу",
             background_color=[0, 1.5, 3, 1],
-            size_hint=[.2, .1],
+            size_hint=[.21, .1],
             on_press=self.file_path,
             pos=(20, 400)
         )
@@ -124,7 +104,7 @@ class DataLoader(Screen):
         button_upload_data = Button(
             text="Загрузить данные",
             background_color=[0, 1.5, 3, 1],
-            size_hint=[.2, .1],
+            size_hint=[.21, .1],
             on_press=self.upload_data,
             pos=(20, 300)
         )
@@ -132,7 +112,7 @@ class DataLoader(Screen):
         button_check_data = Button(
             text='Просмотреть данные',
             background_color=[0, 1.5, 3, 1],
-            size_hint=[.2, .1],
+            size_hint=[.21, .1],
             on_press=self.check_data,
             pos=(20, 200)
         )
@@ -144,6 +124,41 @@ class DataLoader(Screen):
             on_press=self.to_github
         )"""
 
+        button_generate_date = Button(
+            text='Сгенерировать данные',
+            background_color=[0, 1.5, 3, 1],
+            size_hint=[.21, .1],
+            on_press=self.generate_data,
+            pos=(250, 400)
+        )
+
+        dropdown_task = DropDown()
+        tasks = [
+            'Регрессия',
+            'Классификация',
+            'Кластеризация',
+        ]
+        for task in tasks:
+            # Adding button in drop down list
+            btn = Button(text='%s' % task, size_hint_y=None, height=40)
+
+            # binding the button to show the text when selected
+            btn.bind(on_release=lambda btn: dropdown_task.select(btn.text))
+
+            # then add the button inside the dropdown
+            dropdown_task.add_widget(btn)
+
+        global button_drop_down_tasks
+        button_drop_down_tasks = Button(
+            text='Выберите задачу',
+            size_hint=[.23, .05],
+            background_color=[0, 1.5, 3, 1],
+            pos=(670, 600),
+
+        )
+        button_drop_down_tasks.bind(on_press=dropdown_task.open)
+        dropdown_task.bind(on_select=self.drop_down_schose_model_tasks_bind)
+
         boxlayout.add_widget(button_data_loader)
         boxlayout.add_widget(button_data_analysis)
         boxlayout.add_widget(button_data_visualizer)
@@ -153,6 +168,8 @@ class DataLoader(Screen):
         floatlayout.add_widget(button_upload_data)
         floatlayout.add_widget(button_check_data)
         # floatlayout.add_widget(button_to_github)
+        floatlayout.add_widget(button_generate_date)
+        floatlayout.add_widget(button_drop_down_tasks)
         self.add_widget(floatlayout)
 
     def to_dataloader(self, *args):
@@ -174,7 +191,10 @@ class DataLoader(Screen):
 
     def file_path(self, *args):
         global filepath
-        filepath = filedialog.askopenfilename()
+        filepath = filedialog.askopenfilename(
+            title='Выберите файл',
+            filetype=(("csv files", "*.csv"), ("xlsx files", "*.xlsx"), ("All Files", "*.*"))
+        )
         if filepath != '':
             message = "Выбранный путь к файлу: " + filepath
             tk.messagebox.showinfo(title="Файл выбран", message=message)
@@ -201,11 +221,73 @@ class DataLoader(Screen):
             pass
 
     def check_data(self, *args):
-        return DataTableShow()
+        if 'df' in globals():
+            root = Tk()
 
+            root.title("Просмотр данных")
+            root.geometry("450x500")
+            root.resizable(False, False)
+
+            # Frame for TreeView
+            frame1 = tk.LabelFrame(root, text="Ваши данные:")
+            frame1.place(width=450, height=490)
+
+            tv1 = ttk.Treeview(frame1)
+            tv1.place(relheight=1, relwidth=1)
+
+            treescrolly = tk.Scrollbar(frame1, orient="vertical",
+                                       command=tv1.yview)
+            treescrollx = tk.Scrollbar(frame1, orient="horizontal",
+                                       command=tv1.xview)
+            tv1.configure(xscrollcommand=treescrollx.set,
+                          yscrollcommand=treescrolly.set)
+            treescrollx.pack(side="bottom", fill="x")
+            treescrolly.pack(side="right", fill="y")
+
+            tv1["column"] = list(df.columns)
+            tv1["show"] = "headings"
+            for column in tv1["columns"]:
+                tv1.heading(column, text=column)  # let the column heading = column name
+
+            df_rows = df.to_numpy().tolist()  # turns the dataframe into a list of lists
+            for row in df_rows:
+                tv1.insert("", "end", values=row)
+
+            root.mainloop()
+        else:
+            tk.messagebox.showinfo(title="Ошибка!",
+                                   message='Данные еще не загружены!')
+
+    def generate_data(self, *args):
+        root = Tk()
+        root.title("Генерация данных")
+        root.geometry("450x500")
+
+        label_schose_data_type = tk.Label(text='Тип данных: ')
+        label_schose_data_type.pack()
+        label_schose_data_type.place(x=20, y=20)
+
+        generate_data_type_var = StringVar()
+        generate_data_type_var.set('Классификация')
+        r1 = Radiobutton(text='Классификация',
+                         variable=generate_data_type_var, value='Классификация')
+        r2 = Radiobutton(text='Регрессия',
+                         variable=generate_data_type_var, value='Регрессия')
+
+        r1.pack()
+        r1.place(x=110, y=20)
+        r2.pack()
+        r2.place(x=245, y=20)
+
+        root.mainloop()
 
     # def to_github(self, *args):
     #     webbrowser.open("https://github.com/Mr0Wolfy")
+
+    def drop_down_schose_model_tasks_bind(self, instance, x):
+        global chosen_task
+        chosen_task = x
+        return setattr(button_drop_down_tasks, 'text', x)
 
 
 class DataAnalysis(Screen):
@@ -337,11 +419,11 @@ class DataVisualizer(Screen):
             on_press=self.to_dataml
         )
 
-        button_choose_columns = Button(
+        button_schose_columns = Button(
             text="Выбрать колонки",
             background_color=[0, 1.5, 3, 1],
             size_hint=[.2, .1],
-            on_press=self.choose_columns,
+            on_press=self.schose_columns,
             pos=(70, 600)
         )
 
@@ -380,7 +462,7 @@ class DataVisualizer(Screen):
         boxlayout.add_widget(button_data_ml)
         floatlayout.add_widget(boxlayout)
         floatlayout.add_widget(button_create_graph)
-        floatlayout.add_widget(button_choose_columns)
+        floatlayout.add_widget(button_schose_columns)
         floatlayout.add_widget(button_drop_down_graphs)
         self.add_widget(floatlayout)
 
@@ -401,10 +483,10 @@ class DataVisualizer(Screen):
         self.manager.current = 'DataML'
 
 
-    def choose_columns(self, *args):
+    def schose_columns(self, *args):
         if filepath != '':
-            choose_columns_values = df.columns.values.reshape(-1, 1)
-            choose_columns_table = MDDataTable(
+            schose_columns_values = df.columns.values.reshape(-1, 1)
+            schose_columns_table = MDDataTable(
                 size_hint=(.3, .6),
                 use_pagination=True,
                 check=True,
@@ -415,10 +497,10 @@ class DataVisualizer(Screen):
 
                 ]
                 ,
-                row_data=choose_columns_values
+                row_data=schose_columns_values
             )
-            self.remove_widget(choose_columns_table)
-            self.add_widget(choose_columns_table)
+            self.remove_widget(schose_columns_table)
+            self.add_widget(schose_columns_table)
         else:
             pass
 
@@ -431,7 +513,7 @@ class DataML(Screen):
         change_boxlayout = BoxLayout(orientation="horizontal", spacing=5, padding=[10])
         floatlayout = FloatLayout()
 
-        label_choose = Label(
+        label_schose = Label(
             text='[color=000000]Вставьте название целевой переменной:[/color]',
             size_hint=[.1, .1],
             pos=(150, 650),
@@ -500,7 +582,7 @@ class DataML(Screen):
 
         )
         button_drop_down_models.bind(on_release=dropdown_model.open)
-        dropdown_model.bind(on_select=self.drop_down_choose_model_bind)
+        dropdown_model.bind(on_select=self.drop_down_schose_model_bind)
 
 
         dropdown_task = DropDown()
@@ -528,7 +610,7 @@ class DataML(Screen):
 
         )
         button_drop_down_tasks.bind(on_release=dropdown_task.open)
-        dropdown_task.bind(on_select=self.drop_down_choose_model_tasks_bind)
+        dropdown_task.bind(on_select=self.drop_down_schose_model_tasks_bind)
 
 
 
@@ -580,7 +662,7 @@ class DataML(Screen):
 
         )
         button_drop_down_ml_graphs.bind(on_release=dropdown_ml_graphs.open)
-        dropdown_ml_graphs.bind(on_select=self.drop_down_choose_ml_graphs_bind)
+        dropdown_ml_graphs.bind(on_select=self.drop_down_schose_ml_graphs_bind)
 
 
         button_ml_graphs = Button(
@@ -597,7 +679,7 @@ class DataML(Screen):
         change_boxlayout.add_widget(button_data_visualizer)
         change_boxlayout.add_widget(button_data_ml)
 
-        floatlayout.add_widget(label_choose)
+        floatlayout.add_widget(label_schose)
         floatlayout.add_widget(user_label_input)
         floatlayout.add_widget(button_drop_down_models)
         floatlayout.add_widget(button_model_train)
@@ -627,17 +709,17 @@ class DataML(Screen):
         self.manager.transition.direction = 'left'
         self.manager.current = 'DataML'
 
-    def drop_down_choose_model_bind(self, instance, x):
+    def drop_down_schose_model_bind(self, instance, x):
         global chosen_model
         chosen_model = x
         return setattr(button_drop_down_models, 'text', x)
 
-    def drop_down_choose_model_tasks_bind(self, instance, x):
+    def drop_down_schose_model_tasks_bind(self, instance, x):
         global chosen_task
         chosen_task = x
         return setattr(button_drop_down_tasks, 'text', x)
 
-    def drop_down_choose_ml_graphs_bind(self, instance, x):
+    def drop_down_schose_ml_graphs_bind(self, instance, x):
         global chosen_ml_graphs
         chosen_ml_graphs = x
         return setattr(button_drop_down_ml_graphs, 'text', x)
