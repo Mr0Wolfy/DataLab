@@ -54,6 +54,29 @@ filepath = ''
 chosen_model = None
 chosen_task = None
 
+class DataTableShow(Screen):
+    def __init__(self, **kwargs):
+        super().__init__(**kwargs)
+
+        columns = df.columns.values
+        values = df.values
+        global data_table
+        data_table = MDDataTable(
+            size_hint=(.7, .6),
+            use_pagination=True,
+            pos_hint={'center_x': .6, 'center_y': .5},
+            column_data=[
+                (col, dp(30))
+                for col in columns
+            ],
+            row_data=values
+        )
+
+        floatlayout = FloatLayout()
+        floatlayout.add_widget(data_table)
+        self.add_widget(floatlayout)
+
+
 
 class DataLoader(Screen):
     def __init__(self, **kwargs):
@@ -91,7 +114,7 @@ class DataLoader(Screen):
         )
 
         button_file_path = Button(
-            text="Choose file path",
+            text="Выбрать путь к файлу",
             background_color=[0, 1.5, 3, 1],
             size_hint=[.2, .1],
             on_press=self.file_path,
@@ -99,11 +122,19 @@ class DataLoader(Screen):
         )
 
         button_upload_data = Button(
-            text="Upload data",
+            text="Загрузить данные",
             background_color=[0, 1.5, 3, 1],
             size_hint=[.2, .1],
             on_press=self.upload_data,
             pos=(20, 300)
+        )
+
+        button_check_data = Button(
+            text='Просмотреть данные',
+            background_color=[0, 1.5, 3, 1],
+            size_hint=[.2, .1],
+            on_press=self.check_data,
+            pos=(20, 200)
         )
 
         """button_to_github = Button(
@@ -120,6 +151,7 @@ class DataLoader(Screen):
         floatlayout.add_widget(boxlayout)
         floatlayout.add_widget(button_file_path)
         floatlayout.add_widget(button_upload_data)
+        floatlayout.add_widget(button_check_data)
         # floatlayout.add_widget(button_to_github)
         self.add_widget(floatlayout)
 
@@ -165,23 +197,12 @@ class DataLoader(Screen):
             elif file_type == 'json':
                 df = pd.read_json(filepath)
 
-            """
-            columns = df.columns.values
-            values = df.values
-            data_tables = MDDataTable(
-                size_hint=(.7, .6),
-                use_pagination=True,
-                pos_hint={'center_x': .6, 'center_y': .5},
-                column_data=[
-                    (col, dp(30))
-                    for col in columns
-                ],
-                row_data=values
-            )
-            self.add_widget(data_tables)
-            """
         else:
             pass
+
+    def check_data(self, *args):
+        return DataTableShow()
+
 
     # def to_github(self, *args):
     #     webbrowser.open("https://github.com/Mr0Wolfy")
@@ -279,37 +300,6 @@ class DataAnalysis(Screen):
         else:
             pass
 
-class uiApp(App):
-
-    def build(self, *args):
-        self.str = Builder.load_string(""" 
-
-BoxLayout:
-    layout:layout
-
-    BoxLayout:
-
-        id:layout
-
-                                """)
-
-        signal = [7, 89.6, 45. - 56.34]
-
-        signal = np.array(signal)
-
-        # this will plot the signal on graph
-        plt.plot(signal)
-
-        # setting x label
-        plt.xlabel('Time(s)')
-
-        # setting y label
-        plt.ylabel('signal (norm)')
-        plt.grid(True, color='lightgray')
-
-        # adding plot to kivy boxlayout
-        self.str.layout.add_widget(FigureCanvasKivyAgg(plt.gcf()))
-        return self.str
 
 class DataVisualizer(Screen):
     def __init__(self, **kwargs):
@@ -359,7 +349,6 @@ class DataVisualizer(Screen):
             text="Построить график",
             background_color=[0, 1.5, 3, 1],
             size_hint=[.2, .1],
-            on_press=self.create_graph,
             pos=(530, 600)
         )
 
@@ -433,8 +422,6 @@ class DataVisualizer(Screen):
         else:
             pass
 
-    def create_graph(self, *args):
-        uiApp().run()
 
 class DataML(Screen):
     def __init__(self, **kwargs):
@@ -656,20 +643,31 @@ class DataML(Screen):
         return setattr(button_drop_down_ml_graphs, 'text', x)
 
     def get_ml_graphs(self, *args):
-        if chosen_ml_graphs == 'Матрица ошибок':
-            plt.xlabel("Y_pred")
-            plt.ylabel("Y_true")
-            plt.title("Матрица ошибок")
-            sns.heatmap(confusion_matrix(y_test, y_pred), annot=True)
-            plt.show()
-        elif chosen_ml_graphs == 'Рок кривая':
-            y_pred_proba = model.predict_proba(X_test)[::, 1]
-            fpr, tpr, _ = roc_curve(y_test, y_pred_proba)
-            plt.xlabel("False positive rate")
-            plt.ylabel("True positive rate")
-            plt.title("Рок кривая")
-            plt.plot(fpr, tpr)
-            plt.show()
+        if 'model' in globals():
+            classifier_model = ['DecisionTreeClassifier()', 'RandomForestClassifier()', 'LogisticRegression()',
+                                'LinearSVC()', 'KNeighborsClassifier()']
+            if str(model) in classifier_model:
+                if chosen_ml_graphs == 'Матрица ошибок':
+                    plt.xlabel("Y_pred")
+                    plt.ylabel("Y_true")
+                    plt.title("Матрица ошибок")
+                    sns.heatmap(confusion_matrix(y_test, y_pred), annot=True)
+                    plt.show()
+                elif chosen_ml_graphs == 'Рок кривая':
+                    y_pred_proba = model.predict_proba(X_test)[::, 1]
+                    fpr, tpr, _ = roc_curve(y_test, y_pred_proba)
+                    plt.xlabel("False positive rate")
+                    plt.ylabel("True positive rate")
+                    plt.title("Рок кривая")
+                    plt.plot(fpr, tpr)
+                    plt.show()
+            else:
+                tk.messagebox.showinfo(title="Ошибка!",
+                                       message='График {} может быть построен только для задач классификации'.format(chosen_ml_graphs.lower()))
+        else:
+            tk.messagebox.showinfo(title="Ошибка!",
+                                   message='Модель еще не обучена!')
+
 
 
 
@@ -1240,7 +1238,7 @@ class DataML(Screen):
                                           explained_variance_score(y_test, y_pred)))
         else:
             tk.messagebox.showinfo(title="Ошибка!",
-                                   message='Модель еще не обучена')
+                                   message='Модель еще не обучена!')
 
 class DataLabApp(MDApp):
     def build(self):
