@@ -2,6 +2,7 @@
 import pandas as pd
 import numpy as np
 from matplotlib import pyplot as plt
+import seaborn as sns
 
 # Import Kivy framework
 from kivymd.app import MDApp
@@ -40,10 +41,11 @@ from sklearn.svm import LinearSVR
 
 from sklearn.metrics import accuracy_score, precision_score, recall_score, \
     f1_score, roc_auc_score, mean_squared_error, mean_absolute_error, \
-    mean_squared_log_error, explained_variance_score
+    mean_squared_log_error, explained_variance_score, roc_curve
 
 from sklearn.model_selection import train_test_split
 from sklearn.model_selection import GridSearchCV
+from sklearn.metrics import confusion_matrix
 
 # Other
 import webbrowser
@@ -563,8 +565,43 @@ class DataML(Screen):
             text='Метрики модели',
             size_hint=[.23, .05],
             background_color=[0, 1.5, 3, 1],
-            pos=(270, 500),
+            pos=(270, 550),
             on_press=self.model_metrics
+        )
+
+        dropdown_ml_graphs = DropDown()
+        ml_graphs = [
+            'Матрица ошибок',
+            'Рок кривая',
+        ]
+        for graph in ml_graphs:
+            # Adding button in drop down list
+            btn = Button(text='%s' % graph, size_hint_y=None, height=40)
+
+            # binding the button to show the text when selected
+            btn.bind(on_release=lambda btn: dropdown_ml_graphs.select(btn.text))
+
+            # then add the button inside the dropdown
+            dropdown_ml_graphs.add_widget(btn)
+
+        global button_drop_down_ml_graphs
+        button_drop_down_ml_graphs = Button(
+            text='Выберите график',
+            size_hint=[.23, .05],
+            background_color=[0, 1.5, 3, 1],
+            pos=(600, 600),
+
+        )
+        button_drop_down_ml_graphs.bind(on_release=dropdown_ml_graphs.open)
+        dropdown_ml_graphs.bind(on_select=self.drop_down_choose_ml_graphs_bind)
+
+
+        button_ml_graphs = Button(
+            text='Построить график',
+            size_hint=[.23, .05],
+            background_color=[0, 1.5, 3, 1],
+            pos=(600, 550),
+            on_press=self.get_ml_graphs
         )
 
 
@@ -580,6 +617,8 @@ class DataML(Screen):
         floatlayout.add_widget(button_model_params)
         floatlayout.add_widget(button_drop_down_tasks)
         floatlayout.add_widget(button_model_metrics)
+        floatlayout.add_widget(button_drop_down_ml_graphs)
+        floatlayout.add_widget(button_ml_graphs)
 
         floatlayout.add_widget(change_boxlayout)
 
@@ -611,6 +650,29 @@ class DataML(Screen):
         chosen_task = x
         return setattr(button_drop_down_tasks, 'text', x)
 
+    def drop_down_choose_ml_graphs_bind(self, instance, x):
+        global chosen_ml_graphs
+        chosen_ml_graphs = x
+        return setattr(button_drop_down_ml_graphs, 'text', x)
+
+    def get_ml_graphs(self, *args):
+        if chosen_ml_graphs == 'Матрица ошибок':
+            plt.xlabel("Y_pred")
+            plt.ylabel("Y_true")
+            plt.title("Матрица ошибок")
+            sns.heatmap(confusion_matrix(y_test, y_pred), annot=True)
+            plt.show()
+        elif chosen_ml_graphs == 'Рок кривая':
+            y_pred_proba = model.predict_proba(X_test)[::, 1]
+            fpr, tpr, _ = roc_curve(y_test, y_pred_proba)
+            plt.xlabel("False positive rate")
+            plt.ylabel("True positive rate")
+            plt.title("Рок кривая")
+            plt.plot(fpr, tpr)
+            plt.show()
+
+
+
 
 
     def ml_coach(self, *args):
@@ -636,6 +698,7 @@ class DataML(Screen):
         else:
             global y_test
             global y_pred
+            global X_test
             global model
             label = user_label_input.text
             X = df.drop(columns=label, axis=1)
@@ -990,6 +1053,35 @@ class DataML(Screen):
 
 
                 elif chosen_model == 'Опорные вектора':
+
+                    label_kernel_svm = tk.Label(text='Ядро алгоритма: ')
+                    label_kernel_svm.pack()
+                    label_kernel_svm.place(x=20,y=20)
+
+                    kernel_svm_var = StringVar()
+                    kernel_svm_var.set('rbf')
+                    r1 = Radiobutton(text='linear',
+                                     variable=kernel_svm_var, value='linear')
+                    r2 = Radiobutton(text='poly',
+                                     variable=kernel_svm_var, value='poly')
+                    r3 = Radiobutton(text='rbf',
+                                     variable=kernel_svm_var, value='rbf')
+                    r4 = Radiobutton(text='sigmoid',
+                                     variable=kernel_svm_var, value='sigmoid')
+                    r5 = Radiobutton(text='precomputed',
+                                     variable=kernel_svm_var, value='precomputed')
+
+                    r1.pack()
+                    r1.place(x=140, y=20)
+                    r2.pack()
+                    r2.place(x=210, y=20)
+                    r3.pack()
+                    r3.place(x=270, y=20)
+                    r4.pack()
+                    r4.place(x=320, y=20)
+                    r5.pack()
+                    r5.place(x=400, y=20)
+
                     root.mainloop()
 
                 elif chosen_model == 'Ближайшие соседи':
