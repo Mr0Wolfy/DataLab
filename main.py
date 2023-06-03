@@ -27,6 +27,7 @@ import tkinter as tk
 from tkinter import Tk
 from tkinter import ttk
 from tkinter import StringVar
+from tkinter import OptionMenu
 from tkinter import Radiobutton
 from tkinter import filedialog
 
@@ -41,6 +42,8 @@ from sklearn.neighbors import KNeighborsClassifier
 from sklearn.neighbors import KNeighborsRegressor
 from sklearn.svm import LinearSVC
 from sklearn.svm import LinearSVR
+
+from sklearn.datasets import make_classification, make_regression, make_blobs
 
 from sklearn.metrics import accuracy_score, precision_score, recall_score, \
     f1_score, roc_auc_score, mean_squared_error, mean_absolute_error, \
@@ -132,33 +135,6 @@ class DataLoader(Screen):
             pos=(250, 400)
         )
 
-        dropdown_task = DropDown()
-        tasks = [
-            'Регрессия',
-            'Классификация',
-            'Кластеризация',
-        ]
-        for task in tasks:
-            # Adding button in drop down list
-            btn = Button(text='%s' % task, size_hint_y=None, height=40)
-
-            # binding the button to show the text when selected
-            btn.bind(on_release=lambda btn: dropdown_task.select(btn.text))
-
-            # then add the button inside the dropdown
-            dropdown_task.add_widget(btn)
-
-        global button_drop_down_tasks
-        button_drop_down_tasks = Button(
-            text='Выберите задачу',
-            size_hint=[.23, .05],
-            background_color=[0, 1.5, 3, 1],
-            pos=(670, 600),
-
-        )
-        button_drop_down_tasks.bind(on_press=dropdown_task.open)
-        dropdown_task.bind(on_select=self.drop_down_schose_model_tasks_bind)
-
         boxlayout.add_widget(button_data_loader)
         boxlayout.add_widget(button_data_analysis)
         boxlayout.add_widget(button_data_visualizer)
@@ -167,7 +143,6 @@ class DataLoader(Screen):
         floatlayout.add_widget(button_file_path)
         floatlayout.add_widget(button_upload_data)
         floatlayout.add_widget(button_check_data)
-        # floatlayout.add_widget(button_to_github)
         floatlayout.add_widget(button_generate_date)
         self.add_widget(floatlayout)
 
@@ -266,27 +241,28 @@ class DataLoader(Screen):
         label_schose_data_type.pack()
         label_schose_data_type.place(x=20, y=20)
 
-        generate_data_type_var = StringVar()
-        generate_data_type_var.set('Классификация')
-        r1 = Radiobutton(text='Классификация',
-                         variable=generate_data_type_var, value='Классификация')
-        r2 = Radiobutton(text='Регрессия',
-                         variable=generate_data_type_var, value='Регрессия')
+        label_n_samples = tk.Label(text='Выберите кол-во элементов: ')
+        label_n_samples.pack()
+        label_n_samples.place(x=20, y=60)
 
-        r1.pack()
-        r1.place(x=110, y=20)
-        r2.pack()
-        r2.place(x=245, y=20)
+        text_input_n_samples = ttk.Entry()
+        text_input_n_samples.pack()
+        text_input_n_samples.place(x=240, y=60)
+
+        label_n_features = tk.Label(text='Выберите кол-во предикатов: ')
+        label_n_features.pack()
+        label_n_features.place(x=20, y=100)
+
+        text_input_n_features = ttk.Entry()
+        text_input_n_features.pack()
+        text_input_n_features.place(x=240, y=100)
+
 
         root.mainloop()
 
     # def to_github(self, *args):
     #     webbrowser.open("https://github.com/Mr0Wolfy")
 
-    def drop_down_schose_model_tasks_bind(self, instance, x):
-        global chosen_task
-        chosen_task = x
-        return setattr(button_drop_down_tasks, 'text', x)
 
 
 class DataAnalysis(Screen):
