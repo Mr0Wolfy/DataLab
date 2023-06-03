@@ -169,7 +169,6 @@ class DataLoader(Screen):
         floatlayout.add_widget(button_check_data)
         # floatlayout.add_widget(button_to_github)
         floatlayout.add_widget(button_generate_date)
-        floatlayout.add_widget(button_drop_down_tasks)
         self.add_widget(floatlayout)
 
     def to_dataloader(self, *args):
@@ -363,22 +362,43 @@ class DataAnalysis(Screen):
             output = df.dtypes.reset_index().rename(columns={'index': 'Column names', 0: 'Column types'})
             output = output.merge(df.isna().sum().reset_index().rename(columns={'index': 'Column names', 0: 'Nan values'}))
             output['% of nan values'] = np.round((output['Nan values'] / df.shape[0]), 2)
+            output = output.merge(df.nunique().reset_index().rename(columns={'index': 'Column names', 0: 'Nunique'}), how='outer', on='Column names')
             output = output.merge(df.describe().T.reset_index().rename(columns={'index': 'Column names'}),how='left').fillna('-')
             columns_EDA = output.columns.values
             values_EDA = output.values
 
+            root = Tk()
 
-            EDA_table = MDDataTable(
-                    size_hint=(.7, .6),
-                    pos_hint={'center_x': .6, 'center_y': .5},
-                    use_pagination=True,
-                    column_data=[
-                        (col, dp(30))
-                        for col in columns_EDA
-                    ],
-                    row_data=values_EDA
-                )
-            self.add_widget(EDA_table)
+            root.title("Просмотр данных")
+            root.geometry("450x500")
+            root.resizable(False, False)
+
+            # Frame for TreeView
+            frame_eda = tk.LabelFrame(root, text="Ваши данные:")
+            frame_eda.place(width=450, height=490)
+
+            tv_eda = ttk.Treeview(frame_eda)
+            tv_eda.place(relheight=1, relwidth=1)
+
+            treescrolly = tk.Scrollbar(frame_eda, orient="vertical",
+                                       command=tv_eda.yview)
+            treescrollx = tk.Scrollbar(frame_eda, orient="horizontal",
+                                       command=tv_eda.xview)
+            tv_eda.configure(xscrollcommand=treescrollx.set,
+                          yscrollcommand=treescrolly.set)
+            treescrollx.pack(side="bottom", fill="x")
+            treescrolly.pack(side="right", fill="y")
+
+            tv_eda["column"] = list(output .columns)
+            tv_eda["show"] = "headings"
+            for column in tv_eda["columns"]:
+                tv_eda.heading(column, text=column)  # let the column heading = column name
+
+            df_rows = output.to_numpy().tolist()  # turns the dataframe into a list of lists
+            for row in df_rows:
+                tv_eda.insert("", "end", values=row)
+
+            root.mainloop()
         else:
             pass
 
@@ -726,9 +746,9 @@ class DataML(Screen):
 
     def get_ml_graphs(self, *args):
         if 'model' in globals():
-            classifier_model = ['DecisionTreeClassifier()', 'RandomForestClassifier()', 'LogisticRegression()',
-                                'LinearSVC()', 'KNeighborsClassifier()']
-            if str(model) in classifier_model:
+            classifier_model = ['DecisionTreeClassifier', 'RandomForestClassifier', 'LogisticRegression',
+                                'LinearSVC', 'KNeighborsClassifier']
+            if str(model).partition('(')[0] in classifier_model:
                 if chosen_ml_graphs == 'Матрица ошибок':
                     plt.xlabel("Y_pred")
                     plt.ylabel("Y_true")
@@ -744,6 +764,7 @@ class DataML(Screen):
                     plt.plot(fpr, tpr)
                     plt.show()
             else:
+                # tk.messagebox.showinfo(title="Ошибка!",message='%s' % str(model))
                 tk.messagebox.showinfo(title="Ошибка!",
                                        message='График {} может быть построен только для задач классификации'.format(chosen_ml_graphs.lower()))
         else:
@@ -1322,6 +1343,7 @@ class DataML(Screen):
             tk.messagebox.showinfo(title="Ошибка!",
                                    message='Модель еще не обучена!')
 
+# Класс основного приложения
 class DataLabApp(MDApp):
     def build(self):
         sm = ScreenManager()
@@ -1331,6 +1353,6 @@ class DataLabApp(MDApp):
         sm.add_widget(DataML(name='DataML'))
         return sm
 
-
+# Запуск основного приложения
 if __name__ == '__main__':
     DataLabApp().run()
