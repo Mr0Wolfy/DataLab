@@ -82,13 +82,6 @@ class DataLoader(Screen):
             on_press=self.to_dataanalysis,
         )
 
-        button_data_visualizer = Button(
-            text="DataVisualizer",
-            background_color=[0, 1.5, 3, 1],
-            size_hint=[1, .05],
-            on_press=self.to_datavisualizer,
-        )
-
         button_data_ml = Button(
             text="DataML",
             background_color=[0, 1.5, 3, 1],
@@ -137,7 +130,6 @@ class DataLoader(Screen):
 
         boxlayout.add_widget(button_data_loader)
         boxlayout.add_widget(button_data_analysis)
-        boxlayout.add_widget(button_data_visualizer)
         boxlayout.add_widget(button_data_ml)
         floatlayout.add_widget(boxlayout)
         floatlayout.add_widget(button_file_path)
@@ -153,10 +145,6 @@ class DataLoader(Screen):
     def to_dataanalysis(self, *args):
         self.manager.transition.direction = 'left'
         self.manager.current = 'DataAnalysis'
-
-    def to_datavisualizer(self, *args):
-        self.manager.transition.direction = 'left'
-        self.manager.current = 'DataVisualizer'
 
     def to_dataml(self, *args):
         self.manager.transition.direction = 'left'
@@ -263,8 +251,6 @@ class DataLoader(Screen):
     # def to_github(self, *args):
     #     webbrowser.open("https://github.com/Mr0Wolfy")
 
-
-
 class DataAnalysis(Screen):
     def __init__(self, **kwargs):
         super().__init__(**kwargs)
@@ -286,13 +272,6 @@ class DataAnalysis(Screen):
             on_press=self.to_dataanalysis,
         )
 
-        button_data_visualizer = Button(
-            text="DataVisualizer",
-            background_color=[0, 1.5, 3, 1],
-            size_hint=[1, .05],
-            on_press=self.to_datavisualizer,
-        )
-
         button_data_ml = Button(
             text="DataML",
             background_color=[0, 1.5, 3, 1],
@@ -303,17 +282,48 @@ class DataAnalysis(Screen):
         button_EDA = Button(
             text='Первичный анализ',
             background_color=[0, 1.5, 3, 1],
-            size_hint=[.2, .2],
-            pos=(20, 300),
+            size_hint=[.21, .1],
+            pos=(20, 600),
             on_press=self.EDA
+        )
+
+        dropdown = DropDown()
+        graphs = ['Диаграмма рассеяния', 'barplot', 'lineplot', 'boxplot']
+        for graph in graphs:
+            # Adding button in drop down list
+            btn = Button(text='%s' % graph, size_hint_y=None, height=40)
+
+            # binding the button to show the text when selected
+            btn.bind(on_release=lambda btn: dropdown.select(btn.text))
+
+            # then add the button inside the dropdown
+            dropdown.add_widget(btn)
+
+        global button_drop_down_graphs
+        button_drop_down_graphs = Button(
+            text='Выберите график',
+            size_hint=[.2, .1],
+            background_color=[0, 1.5, 3, 1],
+            pos=(300, 600)
+        )
+        button_drop_down_graphs.bind(on_release=dropdown.open)
+        dropdown.bind(on_select=self.drop_down_selected_graph_bind)
+
+        button_graph_params = Button(
+            text='Настроить график',
+            size_hint=[.21, .1],
+            background_color=[0, 1.5, 3, 1],
+            pos=(20, 500),
+            on_press=self.graph_params
         )
 
         boxlayout.add_widget(button_data_loader)
         boxlayout.add_widget(button_data_analysis)
-        boxlayout.add_widget(button_data_visualizer)
         boxlayout.add_widget(button_data_ml)
         floatlayout.add_widget(boxlayout)
         floatlayout.add_widget(button_EDA)
+        floatlayout.add_widget(button_drop_down_graphs)
+        floatlayout.add_widget(button_graph_params)
         self.add_widget(floatlayout)
 
     def to_dataloader(self, *args):
@@ -323,10 +333,6 @@ class DataAnalysis(Screen):
     def to_dataanalysis(self, *args):
         self.manager.transition.direction = 'left'
         self.manager.current = 'DataAnalysis'
-
-    def to_datavisualizer(self, *args):
-        self.manager.transition.direction = 'left'
-        self.manager.current = 'DataVisualizer'
 
     def to_dataml(self, *args):
         self.manager.transition.direction = 'left'
@@ -378,127 +384,65 @@ class DataAnalysis(Screen):
         else:
             pass
 
-
-class DataVisualizer(Screen):
-    def __init__(self, **kwargs):
-        super().__init__(**kwargs)
-
-        boxlayout = BoxLayout(orientation="horizontal", spacing=5, padding=[10])
-        floatlayout = FloatLayout()
+    def drop_down_selected_graph_bind(self, instance, x):
+        global selected_graph
+        selected_graph = x
+        return setattr(button_drop_down_graphs, 'text', x)
 
 
-        button_data_loader = Button(
-            text="DataLoader",
-            background_color=[0, 1.5, 3, 1],
-            size_hint=[1, .05],
-            on_press=self.to_dataloader,
-        )
 
-        button_data_analysis = Button(
-            text="DataAnalysis",
-            background_color=[0, 1.5, 3, 1],
-            size_hint=[1, .05],
-            on_press=self.to_dataanalysis,
-        )
+    def graph_params(self, *args):
+        def create_graph(*args):
+            if 'df' in globals():
+                x = text_input_first_features.get()
+                y = text_input_second_features.get()
+                sns.scatterplot(x=df[x], y=df[y])
+                plt.show()
+            else:
+                tk.messagebox.showinfo(title="Ошибка!", message='Данные еще не загруженны!')
 
-        button_data_visualizer = Button(
-            text="DataVisualizer",
-            background_color=[0, 1.5, 3, 1],
-            size_hint=[1, .05],
-            on_press=self.to_datavisualizer,
-        )
+        if 'selected_graph' in globals():
+            root = Tk()
 
-        button_data_ml = Button(
-            text="DataML",
-            background_color=[0, 1.5, 3, 1],
-            size_hint=[1, .05],
-            on_press=self.to_dataml
-        )
+            root.title("Настройка графика")
+            root.geometry("450x500")
+            root.resizable(False, False)
 
-        button_schose_columns = Button(
-            text="Выбрать колонки",
-            background_color=[0, 1.5, 3, 1],
-            size_hint=[.2, .1],
-            on_press=self.schose_columns,
-            pos=(70, 600)
-        )
+            button_create_graph = tk.Button(text='Создать график', command=create_graph)
+            button_create_graph.pack()
+            button_create_graph.place(x=20, y=450)
 
-        button_create_graph = Button(
-            text="Построить график",
-            background_color=[0, 1.5, 3, 1],
-            size_hint=[.2, .1],
-            pos=(530, 600)
-        )
+            if selected_graph == 'Диаграмма рассеяния':
 
-        dropdown = DropDown()
-        graphs = ['scatterplot', 'barplot', 'lineplot', 'boxplot']
-        for graph in graphs:
-            # Adding button in drop down list
-            btn = Button(text='%s' % graph, size_hint_y=None, height=40)
+                label_first_features = tk.Label(text='Название первой переменной: ')
+                label_first_features.pack()
+                label_first_features.place(x=20, y=20)
 
-            # binding the button to show the text when selected
-            btn.bind(on_release=lambda btn: dropdown.select(btn.text))
+                label_second_features = tk.Label(text='Название второй переменной: ')
+                label_second_features.pack()
+                label_second_features.place(x=20, y=60)
 
-            # then add the button inside the dropdown
-            dropdown.add_widget(btn)
+                text_input_first_features = ttk.Entry(width=15)
+                text_input_first_features.pack()
+                text_input_first_features.place(x=250, y=20)
 
-        button_drop_down_graphs = Button(
-            text='Выберите график',
-            size_hint=[.2, .1],
-            background_color=[0, 1.5, 3, 1],
-            pos=(300, 600)
-        )
-        button_drop_down_graphs.bind(on_release=dropdown.open)
-        dropdown.bind(on_select=lambda instance, x: setattr(button_drop_down_graphs, 'text', x))
+                text_input_second_features = ttk.Entry(width=15)
+                text_input_second_features.pack()
+                text_input_second_features.place(x=250, y=60)
 
+                label_hue = tk.Label(text='Целевая переменная для разделения: ')
+                label_hue.pack()
+                label_hue.place(x=20, y=100)
 
-        boxlayout.add_widget(button_data_loader)
-        boxlayout.add_widget(button_data_analysis)
-        boxlayout.add_widget(button_data_visualizer)
-        boxlayout.add_widget(button_data_ml)
-        floatlayout.add_widget(boxlayout)
-        floatlayout.add_widget(button_create_graph)
-        floatlayout.add_widget(button_schose_columns)
-        floatlayout.add_widget(button_drop_down_graphs)
-        self.add_widget(floatlayout)
+                text_input_hue = ttk.Entry(width=15)
+                text_input_hue.pack()
+                text_input_hue.place(x=300, y=100)
 
-    def to_dataloader(self, *args):
-        self.manager.transition.direction = 'right'
-        self.manager.current = 'DataLoader'
-
-    def to_dataanalysis(self, *args):
-        self.manager.transition.direction = 'right'
-        self.manager.current = 'DataAnalysis'
-
-    def to_datavisualizer(self, *args):
-        self.manager.transition.direction = 'right'
-        self.manager.current = 'DataVisualizer'
-
-    def to_dataml(self, *args):
-        self.manager.transition.direction = 'left'
-        self.manager.current = 'DataML'
-
-
-    def schose_columns(self, *args):
-        if filepath != '':
-            schose_columns_values = df.columns.values.reshape(-1, 1)
-            schose_columns_table = MDDataTable(
-                size_hint=(.3, .6),
-                use_pagination=True,
-                check=True,
-                pos=(70, 90),
-                column_data=
-                [
-                    ('Name', dp(30))
-
-                ]
-                ,
-                row_data=schose_columns_values
-            )
-            self.remove_widget(schose_columns_table)
-            self.add_widget(schose_columns_table)
+            root.mainloop()
         else:
-            pass
+            tk.messagebox.showinfo(title="Ошибка!",message='График не выбран!')
+
+
 
 
 class DataML(Screen):
@@ -534,13 +478,6 @@ class DataML(Screen):
             background_color=[0, 1.5, 3, 1],
             size_hint=[1, .05],
             on_press=self.to_dataanalysis
-        )
-
-        button_data_visualizer = Button(
-            text="DataVisualizer",
-            background_color=[0, 1.5, 3, 1],
-            size_hint=[1, .05],
-            on_press=self.to_datavisualizer
         )
 
         button_data_ml = Button(
@@ -672,7 +609,6 @@ class DataML(Screen):
 
         change_boxlayout.add_widget(button_data_loader)
         change_boxlayout.add_widget(button_data_analysis)
-        change_boxlayout.add_widget(button_data_visualizer)
         change_boxlayout.add_widget(button_data_ml)
 
         floatlayout.add_widget(label_schose)
@@ -698,9 +634,6 @@ class DataML(Screen):
         self.manager.transition.direction = 'right'
         self.manager.current = 'DataAnalysis'
 
-    def to_datavisualizer(self, *args):
-        self.manager.transition.direction = 'right'
-        self.manager.current = 'DataVisualizer'
     def to_dataml(self, *args):
         self.manager.transition.direction = 'left'
         self.manager.current = 'DataML'
@@ -1325,7 +1258,6 @@ class DataLabApp(MDApp):
         sm = ScreenManager()
         sm.add_widget(DataLoader(name='DataLoader'))
         sm.add_widget(DataAnalysis(name='DataAnalysis'))
-        sm.add_widget(DataVisualizer(name='DataVisualizer'))
         sm.add_widget(DataML(name='DataML'))
         return sm
 
