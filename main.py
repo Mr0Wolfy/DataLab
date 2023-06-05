@@ -288,7 +288,7 @@ class DataAnalysis(Screen):
         )
 
         dropdown = DropDown()
-        graphs = ['Диаграмма рассеяния', 'barplot', 'lineplot', 'boxplot']
+        graphs = ['Диаграмма рассеяния', 'Гистограмма', 'lineplot', 'boxplot']
         for graph in graphs:
             # Adding button in drop down list
             btn = Button(text='%s' % graph, size_hint_y=None, height=40)
@@ -302,7 +302,7 @@ class DataAnalysis(Screen):
         global button_drop_down_graphs
         button_drop_down_graphs = Button(
             text='Выберите график',
-            size_hint=[.2, .1],
+            size_hint=[.21, .1],
             background_color=[0, 1.5, 3, 1],
             pos=(300, 600)
         )
@@ -394,9 +394,34 @@ class DataAnalysis(Screen):
     def graph_params(self, *args):
         def create_graph(*args):
             if 'df' in globals():
-                x = text_input_first_features.get()
-                y = text_input_second_features.get()
-                sns.scatterplot(x=df[x], y=df[y])
+                if selected_graph == 'Диаграмма рассеяния':
+                    x = text_input_first_features.get()
+                    y = text_input_second_features.get()
+                    hue = text_input_hue.get()
+                    if hue == '':
+                        sns.scatterplot(x=df[x], y=df[y])
+                    if hue != '':
+                        sns.scatterplot(x=df[x], y=df[y], hue=df[hue])
+
+                elif selected_graph == 'Гистограмма':
+                    x = text_input_first_features.get()
+                    y = text_input_second_features.get()
+                    hue = text_input_hue.get()
+                    if hue == '':
+                        sns.barplot(x=df[x], y=df[y])
+                    if hue != '':
+                        sns.barplot(x=df[x], y=df[y], hue=df[hue])
+                elif selected_graph == 'boxplot':
+                    features_arr = text_input_features_array_boxplot.get().split(',')
+                    sns.boxplot(df[features_arr])
+
+
+                elif selected_graph == 'Линейный график':
+                    x = text_input_first_features.get()
+                    y = text_input_second_features.get()
+                    sns.lineplot(data=df, x=df[x], y=df[y])
+
+
                 plt.show()
             else:
                 tk.messagebox.showinfo(title="Ошибка!", message='Данные еще не загруженны!')
@@ -412,7 +437,7 @@ class DataAnalysis(Screen):
             button_create_graph.pack()
             button_create_graph.place(x=20, y=450)
 
-            if selected_graph == 'Диаграмма рассеяния':
+            if selected_graph == 'Диаграмма рассеяния' or selected_graph == 'Гистограмма':
 
                 label_first_features = tk.Label(text='Название первой переменной: ')
                 label_first_features.pack()
@@ -437,6 +462,33 @@ class DataAnalysis(Screen):
                 text_input_hue = ttk.Entry(width=15)
                 text_input_hue.pack()
                 text_input_hue.place(x=300, y=100)
+
+            elif selected_graph == 'boxplot':
+                label_features_array_boxplot = tk.Label(text='Введите названия колонок(через запятую):')
+                label_features_array_boxplot.pack()
+                label_features_array_boxplot.place(x=20, y=20)
+
+                text_input_features_array_boxplot = ttk.Entry(width=10)
+                text_input_features_array_boxplot.pack()
+                text_input_features_array_boxplot.place(x=330, y=20)
+
+            elif selected_graph == 'lineplot':
+                label_first_features = tk.Label(text='Название первой переменной: ')
+                label_first_features.pack()
+                label_first_features.place(x=20, y=20)
+
+                label_second_features = tk.Label(text='Название второй переменной: ')
+                label_second_features.pack()
+                label_second_features.place(x=20, y=60)
+
+                text_input_first_features = ttk.Entry(width=15)
+                text_input_first_features.pack()
+                text_input_first_features.place(x=250, y=20)
+
+                text_input_second_features = ttk.Entry(width=15)
+                text_input_second_features.pack()
+                text_input_second_features.place(x=250, y=60)
+
 
             root.mainloop()
         else:
